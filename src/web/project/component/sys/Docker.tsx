@@ -31,7 +31,7 @@ export function Docker(props) {
 
     const [shellShow, setShellShow] = useRecoilState($stroe.dockerShellShow);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
-    const [filterKey,setFilterKey] = useState("");
+    const [filterKey,setFilterKey] = useState(filter);
     const [headers, setHeaders] = useState(["id", t("名字"), t("镜像"), t("命令"), t("状态"),t("内存"),"cpu%", t("选择")]);
 
 
@@ -249,8 +249,8 @@ export function Docker(props) {
                     </Column>
                 </Row>
             }
-            {rows.length === 0 && !show_iamges && <Blank context={"检测不到docker，主机可能没有安装docker or 容器为空"}/>}
-            {rows.length !== 0 && !show_iamges && (
+            {rows.length === 0 && !filterKey && !show_iamges && <Blank context={"检测不到docker，主机可能没有安装docker or 容器为空"}/>}
+            {(rows.length !== 0 || filterKey) && !show_iamges && (
                 <Row>
                     <Column widthPer={80}>
                         <CardFull title={`容器(${rows.length})`}

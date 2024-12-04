@@ -12,11 +12,8 @@ import Header from "../../../meta/component/Header";
 import {DockerShell} from "../shell/DockerShell";
 import {useRecoilState} from "recoil";
 import {$stroe} from "../../util/store";
-import {sort} from "../../../../common/ListUtil";
-import {PromptEnum} from "../prompts/Prompt";
 import {useTranslation} from "react-i18next";
 import {formatFileSize} from "../../../../common/ValueUtil";
-import {as} from "tencentcloud-sdk-nodejs";
 import {fileHttp, sshHttp, sysHttp} from "../../util/config";
 import {RCode} from "../../../../common/Result.pojo";
 import {NotySucess} from "../../util/noty";
@@ -169,7 +166,7 @@ export function Systemd(props) {
             set_systemd_rows(systemd_rows_p);
             return;
         }
-        for (const list of systemd_rows) {
+        for (const list of systemd_rows_p) {
             if(list[0].props.context.includes(systemd_filterkey) || list[3].props.context.includes(systemd_filterkey)) {
                 left_rows.push(list);
             }

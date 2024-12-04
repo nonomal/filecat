@@ -1,4 +1,4 @@
-import {Body, Controller, Ctx, Get, Param, Post} from "routing-controllers";
+import {Body, Controller, Ctx, Get, JsonController, Param, Post, Req} from "routing-controllers";
 import {UserBaseInfo, UserLogin} from "../../../common/req/user.req";
 import {AuthFail, Fail, Result, Sucess} from "../../other/Result";
 import {Cache} from "../../other/cache";
@@ -11,9 +11,10 @@ import {settingService} from "./setting.service";
 import {self_auth_jscode} from "../../../common/req/customerRouter.pojo";
 import {TokenSettingReq, TokenTimeMode} from "../../../common/req/setting.req";
 import {getSys} from "../shell/shell.service";
+import {getShortTime} from "../../../common/ValueUtil";
 
 @Service()
-@Controller("/setting")
+@JsonController("/setting")
 export class SettingController {
 
     @Post('/updatePassword')
@@ -95,18 +96,24 @@ export class SettingController {
         router = settingService.routerHandler(router);
         const context = DataUtil.getFile(router);
         const  pre = ` 
-             // 必须存在的类
-             class Api {  
+         // 必须存在的类
+         class Api {  
+            
+            /*
+            * 处理并返回结果
+            * 此脚本会被用于eval执行，所以本项目内setting.service.ts文件内的所有变量都使用，如果需要可以自己查询相关变量。
+            * @params headers: 请求头对象
+            * @params body: 请求体 字符串形式
+            * @params req: express 的req
+            * @params cache: filecat的token缓存管理器 
+            */
+            async handler(headers,body,req,cache) { 
                 
-                /*
-                * 处理并返回结果
-                * @params headers: 请求头对象
-                * @params body: 请求体
-                */
-                async handler(headers,body,ctx) { 
-                    return null;
-                }
-             }
+                // todo 处理
+                
+                return null;
+            }
+         }
         `;
         if (!context) {
             DataUtil.setFile(router,pre);
@@ -142,7 +149,7 @@ export class SettingController {
 
     // 设置文件路由设置
     @Post('/filesSetting/save')
-    saveFilesSetting(@Body() req:any,@Ctx() ctx) {
+    saveFilesSetting(@Body() req:any,@Req() ctx) {
         settingService.saveFilesSetting(req,ctx.headers.authorization);
         return Sucess("1");
     }
@@ -171,6 +178,7 @@ export class SettingController {
         return Sucess("1");
     }
 
+    start_server_time = Date.now();
     @Get("/userInfo/get")
     getLanguage() {
         const pojo = new UserBaseInfo();
@@ -182,6 +190,34 @@ export class SettingController {
             map[item.id]= item;
         }
         pojo.sysSoftWare = map;
+        pojo.runing_time_length = getShortTime(this.start_server_time)
         return Sucess(pojo);
+    }
+
+
+    // path路径
+    @Get("/env/path/get")
+    getEnvPath() {
+        return Sucess(settingService.getEnvPath());
+    }
+
+    @Post('/env/path/save')
+    setEnvPath(@Body() req:{path:string}) {
+        settingService.setEnvPath(req.path);
+        return Sucess("1");
+    }
+
+
+    // 获取保护目录
+    @Get("/protection_dir")
+    protectionDirGet() {
+        return Sucess(settingService.protectionDirGet());
+    }
+
+    // 保存保护目录
+    @Post('/protection_dir/save')
+    protectionDirSave(@Body() req:any) {
+        settingService.protectionDirSave(req);
+        return Sucess("1");
     }
 }

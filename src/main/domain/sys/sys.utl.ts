@@ -1,6 +1,5 @@
 import {execSync} from "child_process";
 import {sysType} from "../shell/shell.service";
-import pidtree from "pidtree";
 
 export class SystemUtil {
 
@@ -16,16 +15,9 @@ export class SystemUtil {
 
     public static killProcess(pid): void {
         if (sysType === 'win') {
-            SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`)
+            SystemUtil.commandIsExist(`taskkill /pid ${pid} /f /t`) // todo 关闭一个控制台进程下的所有子进程
         } else {
-            pidtree(pid, function (err, pids) {
-                if (pids) {
-                    for (const id  of pids) {
-                        SystemUtil.commandIsExist(`kill  ${id} `)
-                    }
-                }
-            })
-            SystemUtil.commandIsExist(`kill  ${pid} `)
+            SystemUtil.commandIsExist(`kill -9 ${pid} `)
         }
     }
 }
