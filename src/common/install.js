@@ -6,15 +6,23 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-
+let exe_path;
+if (process.argv[0].endsWith("node") && process.argv[1].endsWith("filecat")) {
+    // 通过 脚本运行
+    exe_path = `${process.argv[0]} ${process.argv[1]} `
+} else {
+    exe_path = process.argv[0];
+}
 const data = {
-    exe_path:process.argv[0],
+    exe_path:exe_path,
     env_path:"",
     port:5567,
     username:"admin",
     password:"admin",
     work_dir:`${process.cwd()}/data`,
-    base_folder:process.cwd()
+    base_folder:process.cwd(),
+    Group:"root",
+    User:"root"
 };
 // 提问函数
 const askQuestion = (query) => {
@@ -25,6 +33,16 @@ const step = {
         const input = await askQuestion(`\x1b[31m1.\x1b[0m程序位置-绝对路径(当前-${data.exe_path}):`);
         if (input) {
             data.exe_path = input;
+        }
+        const User = await askQuestion(`\x1b[31m\x1b[0m请输入用户账号(默认:root):`);
+        if (User) {
+            data.User = User;
+            const Group = await askQuestion(`\x1b[31m\x1b[0m请输入用户所属组(默认:${User}):`);
+            if (Group) {
+                data.Group = Group;
+            } else {
+                data.Group = User;
+            }
         }
         return "2";
     },
@@ -88,7 +106,8 @@ After=network.target
 [Service]
 ExecStart=${data.exe_path} ${param}
 Restart=always
-Group=root
+User=${data.User}
+Group=${data.Group}
 KillMode=process
 [Install]
 WantedBy=multi-user.target

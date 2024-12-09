@@ -6,7 +6,7 @@ import {LifecycleRecordService} from "../pre/lifeRecordService";
 const EventEmitter = require('events');
 
 
-import {Client} from 'ssh2';
+import {Client} from '@xiaobaidadada/ssh2-prebuilt';
 import fs from "fs";
 
 export const sftp_client = "sftp_client_key";
@@ -15,14 +15,14 @@ export class SshSsh2 extends LifecycleRecordService {
 
     async connect(req: SshPojo): Client {
         // 要传递的环境变量
-        const envVars = {
-            PATH: process.env.PATH, // 传递 PATH 环境变量
-        };
+        // const envVars = {
+        //     PATH: process.env.PATH, // 传递 PATH 环境变量
+        // };
         const options = {
             host: req.domain,
             port: req.port,
             username: req.username,
-            env:envVars,
+            // env:envVars,
             // 设定keepaliveInterval和keepaliveCountMax
             keepaliveInterval: 10000, // 每10秒发送一次keepalive消息
             keepaliveCountMax: 10 // 尝试10次keepalive后如果没有响应则断开连接
@@ -50,11 +50,11 @@ export class SshSsh2 extends LifecycleRecordService {
                 resolve(false);
                 console.log("ssh关闭")
                 this.lifeClose(SshPojo.getKey(req));
-                try {
-                    client[sftp_client].end();
-                } catch (e) {
-                    console.log(e);
-                }
+                // try {
+                //     client[sftp_client].end();
+                // } catch (e) {
+                //     console.log(e);
+                // }
             });
         })
     }

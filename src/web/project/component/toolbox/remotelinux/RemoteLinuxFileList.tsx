@@ -20,6 +20,7 @@ import {getFilesByIndexs} from "../../file/FileUtil";
 import {FileTypeEnum, GetFilePojo} from "../../../../../common/file.pojo";
 import {InputTextIcon} from "../../../../meta/component/Input";
 import {useTranslation} from "react-i18next";
+import {NotyFail} from "../../../util/noty";
 
 export enum FileListShowTypeEmum {
     block = "",
@@ -59,6 +60,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
     const [uploadFiles, setUploadFiles] = useRecoilState($stroe.uploadFiles);
     const [showPrompt, setShowPrompt] = useRecoilState($stroe.showPrompt);
     const [selectedFile, setSelectedFile] = useRecoilState($stroe.selectedFileList);
+    const [enterKey,setEnterKey] = useRecoilState($stroe.enterKey);
     const [copyedFileList, setCopyedFileList] = useRecoilState($stroe.copyedFileList);
     const [cutedFileList, setCutedFileList] = useRecoilState($stroe.cutedFileList);
     const [selectList, setSelectList] = useRecoilState($stroe.selectedFileList);
@@ -80,6 +82,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         req.port = props.data.port;
         const rsp = await sshHttp.post("get/dir", req);
         if (rsp.code !== RCode.Sucess) {
+            NotyFail("连接失败")
             return;
         }
         const {folders, files} = rsp.data || {};
@@ -204,7 +207,7 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
 
     function downloadFile() {
         const files = getFilesByIndexs(nowFileList, selectedFile);
-        const url = `/ssh/download?file=${joinPaths(...shellNowDir, files[0]['name'])}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}`;
+        const url = `/api/ssh/download?file=${joinPaths(...shellNowDir, files[0]['name'])}&domain=${props.data.domain}&port=${props.data.port}&username=${props.data.username}&password=${props.data.password}&token=${localStorage.getItem('token')}`;
         window.open(url);
     }
 
@@ -257,6 +260,54 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
         setNowFileList({files, folders});
     }
 
+
+    // 快捷键
+    const [isFocused, setIsFocused] = useState(false);
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (!isFocused) {
+                return;
+            }
+            if(!event.ctrlKey) {
+                if(event.key === 'Escape') {
+                    setSelectList([])
+                } else if(event.key === 'Shift') {
+                    setEnterKey("shift")
+                }
+                return;
+            }
+            if(event.key === 'a' || event.key === 'A') {
+                const len = nowFileList.files.length;
+                const len2 = nowFileList.folders.length;
+                const list = [];
+                for (let i= 0; i < len+len2; i++) {
+                    list.push(i);
+                }
+                setSelectList(list)
+            }  else {
+                setEnterKey("ctrl")
+            }
+        };
+        const handleKeyUp = (event) => {
+            if (!event.ctrlKey) {
+                setEnterKey("");
+            }
+        };
+        // 添加全局键盘事件监听
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        // 在组件卸载时移除事件监听
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [nowFileList,isFocused]);
+    const clickBlank = (event) => {
+        if (event.target === event.currentTarget) {
+            setSelectList([])
+        }
+    }
+
     return (
         <div className={"not-select-div"}>
             <Header left_children={<InputTextIcon handleEnterPress={searchHanle} placeholder={t("搜索当前目录")}
@@ -285,17 +336,17 @@ export function RemoteLinuxFileList(props: RemoteLinuxFileListProps) {
                     props.close();
                 }}/>
             </Header>
-            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef}>
+            <div id={"listing"} className={`mosaic file-icons ${fileType}`} ref={inputRef} onMouseEnter={()=>{setIsFocused(true)}} onMouseLeave={()=>{setIsFocused(false)}}>
                 {(!!nowFileList && !!nowFileList.folders && nowFileList.folders.length > 0) && <h2>文件夹</h2>}
                 {(!!nowFileList && !!nowFileList.folders) &&
-                    (<div>{nowFileList.folders.map((v, index) => (
+                    (<div onClick={clickBlank}>{nowFileList.folders.map((v, index) => (
                         // @ts-ignore
                         <RemoteLinuxFileItem itemWidth={itemWidth} index={index} key={index} {...v} />))}</div>)
                 }
-                {(!!nowFileList && !!nowFileList.folders && nowFileList.files.length > 0) && <h2>文件</h2>}
+                {(!!nowFileList && !!nowFileList.folders && nowFileList.files.length > 0) && <h2 onClick={clickBlank}>文件</h2>}
                 {(!!nowFileList && !!nowFileList.folders) &&
                     // @ts-ignore
-                    (<div>{nowFileList.files.map((v, index) => (
+                    (<div onClick={clickBlank}>{nowFileList.files.map((v, index) => (
                         <RemoteLinuxFileItem itemWidth={itemWidth} index={index + nowFileList.folders.length}
                             // @ts-ignore
                                              key={index} {...v}/>))}</div>)

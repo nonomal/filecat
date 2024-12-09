@@ -2,14 +2,26 @@ import {msg} from "../../../common/frame/router";
 import {CmdType, WsData} from "../../../common/frame/WsData";
 import {navindex_remote_ssh_key, sshService} from "./ssh.service";
 import {ShellInitPojo, SshPojo} from "../../../common/req/ssh.pojo";
-import {Body, Controller, Ctx, Delete, Get, Param, Post, Put, UploadedFile} from "routing-controllers";
+import {
+    Body,
+    Controller,
+    Ctx,
+    Delete,
+    Get,
+    JsonController,
+    Param,
+    Post,
+    Put,
+    Req, Res,
+    UploadedFile
+} from "routing-controllers";
 import {Sucess} from "../../other/Result";
 import {NavIndexItem} from "../../../common/req/common.pojo";
 import {DataUtil} from "../data/DataUtil";
 import multer from "multer";
-import {Context} from "koa";
+import {Request, Response} from "express";
 
-@Controller("/ssh")
+@JsonController("/ssh")
 export class SSHController {
 
     @Post("/start")
@@ -70,8 +82,8 @@ export class SSHController {
 
     // 上传文件
     @Put("/")
-    async uploadFile(@Ctx() ctx: Context ,@UploadedFile('file') file?: multer.File) {
-        await sshService.uploadFile(ctx, file);
+    async uploadFile(@Req() req: Request, @Res() res: Response,) {
+        await sshService.uploadFile(req, res);
         return Sucess("1");
     }
 
@@ -81,6 +93,7 @@ export class SSHController {
         sshService.open(data);
         return ""
     }
+
     @msg(CmdType.remote_shell_send)
     async send(data: WsData<SshPojo>) {
         sshService.send(data);

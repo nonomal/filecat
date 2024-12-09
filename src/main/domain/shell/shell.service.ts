@@ -21,9 +21,10 @@ export function getSys() {
     } else if (sysType === "linux") {
         return SysEnum.linux
     } else {
-        return ;
+        return;
     }
 }
+
 function getSysShell() {
     if (sysType === 'win') {
         if (SystemUtil.commandIsExist("pwsh")) {
@@ -53,19 +54,17 @@ export function getShell() {
 }
 
 // const pty:any = shell === 'powershell.exe'?require('../../../../local_node_modules/windows/node-pty'):require('../../../../local_node_modules/linux/node-pty');
-const pty: any = require("@homebridge/node-pty-prebuilt-multiarch")
+const pty: any = require("@xiaobaidadada/node-pty-prebuilt")
 
 
 const socketMap: Map<string, any> = new Map();
-
+const init_sys_env_path = process.env.PATH;
 export class ShellService {
 
     async open(data: WsData<ShellInitPojo>) {
         const socketId = (data.wss as Wss).id;
         // 要传递的环境变量
-        const envVars = {
-            PATH: process.env.PATH, // 传递 PATH 环境变量 todo 应该是目标服务器上的
-        };
+        process.env.PATH = init_sys_env_path +(sysType === "win" ? ";" : ":")  + settingService.getEnvPath();
         const pojo = data.context as ShellInitPojo;
         // 创建
         const ptyProcess = pty.spawn(getShell(), [], {
@@ -73,8 +72,10 @@ export class ShellService {
             cols: pojo.cols,
             rows: pojo.rows,
             cwd: process.env.HOME,
-            env: envVars,
-            useConpty: process.env.NODE_ENV !== "production" ? false : undefined,
+            env:process.env,
+            useConptyDll:false, // 使用useConpty的话 新版本的windwos都不需要这个dll自带的有
+            useConpty: process.env.NODE_ENV !== "production" ? false : undefined,// conpty 可以支持 bash 等命令 从 Windows 10 版本 1809 开始提供 ， 但是如果使用了 powershell 这个也就没有必要了，而且设置为false才能使用debug模式运行
+            // exePath:"F:\\winpty-agent.exe"
         });
         const sysPath = path.join(settingService.getFileRootPath(pojo.http_token), (pojo.init_path !== null && pojo.init_path !== "null") ? pojo.init_path : "");
         const cm = `cd '${decodeURIComponent(sysPath)}' ${cr}`;
@@ -126,7 +127,7 @@ export class ShellService {
         const socketId = (data.wss as Wss).id;
         const pty = socketMap.get(socketId);
         if (pty) {
-            const sysPath = path.join(settingService.getFileRootPath(data.context.http_token),decodeURIComponent(data.context.init_path));
+            const sysPath = path.join(settingService.getFileRootPath(data.context.http_token), decodeURIComponent(data.context.init_path));
             const cm = `cd '${sysPath}' ${cr}`;
             pty.write(cm);
         }
